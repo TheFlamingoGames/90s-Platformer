@@ -3,7 +3,8 @@
 --- !u!78 &1
 TagManager:
   serializedVersion: 2
-  tags: []
+  tags:
+  - Border
   layers:
   - Default
   - TransparentFX
@@ -40,4 +41,16 @@ TagManager:
   m_SortingLayers:
   - name: Default
     uniqueID: 0
+    locked: 0
+  - name: Background
+    uniqueID: 1063189781
+    locked: 0
+  - name: Platform
+    uniqueID: 3594002187
+    locked: 0
+  - name: Enemies and Items
+    uniqueID: 2060877533
+    locked: 0
+  - name: Player
+    uniqueID: 3640052867
     locked: 0

@@ -13,8 +13,10 @@ public class PlayerController : MonoBehaviour
 
     //Jump
     [SerializeField] float groundTime = 0.2f;
-    [SerializeField] float jumpTime = 0.2f;
+    [SerializeField] float jumpTriggerTime = 0.2f;
+    [SerializeField] float jumpTime = 0.5f;
     float groundTimer = 0f;
+    float jumpTriggerTimer = 0f;
     float jumpTimer = 0f;
     bool booJump;
 
@@ -23,9 +25,9 @@ public class PlayerController : MonoBehaviour
     LayerMask collisionLayer;
 
     //Movement
-    [SerializeField] float speedY = 10f;
+    [SerializeField] float speedY = 13f;
     [SerializeField] float speedX = 10f;
-    float movementSpeed;
+    float movementSpeedX;
 
     [SerializeField] float gcPosY = -0.01f;
     [SerializeField] float gcScale = -0.02f;
@@ -47,28 +49,54 @@ public class PlayerController : MonoBehaviour
 
     private void MovementInput() 
     {
+        if (Input.GetButtonDown("Fire1")) 
+        { 
+            animator.SetTrigger("CrouchTrigger"); 
+        }
+
+        bool crouch = Input.GetButton("Fire1");
+        float movementSpeedY;
         //Check if player hit the ground
         Vector2 groundCheckPos = (Vector2)transform.position + new Vector2(0, gcPosY);
         Vector2 groundCheckScale = (Vector2)transform.localScale + new Vector2(gcScale, 0);
-        bool booGround = Physics2D.OverlapBox(groundCheckPos, groundCheckScale, 0, collisionLayer);
+        bool ground = Physics2D.OverlapBox(groundCheckPos, groundCheckScale, 0, collisionLayer);
         //Tick down the timers
         groundTimer -= Time.deltaTime;
-        jumpTimer -= Time.deltaTime;
+        jumpTriggerTimer -= Time.deltaTime;
 
         //jump timer and coyote time activated for smoother gameplay
-        if (Input.GetButtonDown("Jump")) { jumpTimer = jumpTime; }
-        if (booGround) {groundTimer = groundTime; }
+        if (Input.GetButtonDown("Jump")) { jumpTriggerTimer = jumpTriggerTime; }
+        if (ground) {groundTimer = groundTime; }
 
-        //If jump was pressed, and player touched the ground, jump
-        if ((jumpTimer > 0) && (groundTimer > 0))
+        //If jump was pressed, and player was touching the ground, jump!
+        if ((jumpTriggerTimer > 0) && (groundTimer > 0))
         {
             groundTimer = 0;
-            jumpTimer = 0;
+            jumpTriggerTimer = 0;
+            jumpTimer = jumpTime;
             booJump = true;
         }
-        movementSpeed = Input.GetAxisRaw("Horizontal") * speedX;
+        if (booJump && Input.GetButton("Jump")) 
+        {
+            if (jumpTimer > 0)
+            {
+                jumpTimer -= Time.deltaTime;
+            }
+            else 
+            {
+                booJump = false;
+            }
+        }
+        if (Input.GetButtonUp("Jump")) 
+        {
+            booJump = false;
+        }
 
-        if (rigid.velocity.y >= 0)
+            if (groundTimer > 0)
+        {
+            rigid.gravityScale = 0;
+        }
+        if (rigid.velocity.y > 0)
         {
             rigid.gravityScale = normalGravity;
         }
@@ -76,34 +104,8 @@ public class PlayerController : MonoBehaviour
         {
             rigid.gravityScale = fallGravity;
         }
-        if (Input.GetButton("Jump"))
-        {
-            
-        }
 
-        if (booGround)
-        {
-            if (Input.GetAxisRaw("Horizontal") != 0)
-            {
-                animator.SetTrigger("Walk");
-            }
-            else
-            {
-                animator.SetTrigger("Stop");
-            }
-            if (Input.GetButtonDown("Fire1"))
-            {
-                animator.SetTrigger("Duck");
-            }
-            if (Input.GetButtonUp("Fire1"))
-            {
-                animator.SetTrigger("DuckUp");
-            }
-        }
-        else 
-        {
-
-        }
+        movementSpeedX = Input.GetAxisRaw("Horizontal") * speedX;
         if (Input.GetAxisRaw("Horizontal") > 0) 
         {
             transform.localScale = new Vector3(1, 1, 1);
@@ -112,15 +114,35 @@ public class PlayerController : MonoBehaviour
         {
             transform.localScale = new Vector3(-1, 1, 1);
         }
+
+        movementSpeedY = rigid.velocity.y;
+        ground = (groundTimer > 0);
+
+        PlayAnimations(ground, crouch, movementSpeedX, movementSpeedY);
     }
 
     private void Move()
     {
         if (booJump)
         {
-            booJump = false;
+            //booJump = false;
             rigid.velocity = new Vector2(rigid.velocity.x, speedY);
         }
-        rigid.velocity = new Vector2(movementSpeed, rigid.velocity.y);
+        rigid.velocity = new Vector2(movementSpeedX, rigid.velocity.y);
+    }
+
+    bool prevGround = false;
+    private void PlayAnimations(bool ground, bool crouch,float MoveX, float MoveY) 
+    {
+        if (prevGround != ground)
+        {
+            animator.SetTrigger("GroundTrigger");
+        }
+        animator.SetBool("Ground", ground);
+        animator.SetBool("Crouch", crouch);
+        animator.SetFloat("MoveX", Mathf.Abs(MoveX));
+        animator.SetFloat("MoveY", MoveY);
+
+        prevGround = ground;
     }
 }
